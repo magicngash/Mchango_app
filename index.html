@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mchango Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .emoji {
+            font-size: 2rem;
+            margin: 0 10px;
+        }
+
+        .editable-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 3px solid #e9ecef;
+        }
+
+        .editable-field {
+            margin-bottom: 15px;
+        }
+
+        .editable-field label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .editable-field textarea, .editable-field input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .editable-field textarea:focus, .editable-field input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0px);
+        }
+
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .total-amount {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .total-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .contributions-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .contributions-table th {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .contributions-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .contributions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .method-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .method-mpesa { background: #25D366; color: white; }
+        .method-cash { background: #ffc107; color: #212529; }
+        .method-bank { background: #007bff; color: white; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state .emoji {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .actions-column {
+            text-align: center;
+            width: 120px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin: 2px;
+        }
+
+        .footer-section {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .total-amount {
+                font-size: 2rem;
+            }
+
+            .contributions-table th,
+            .contributions-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="emoji">💰</span>Mchango Tracker<span class="emoji">📊</span></h1>
+        </div>
+
+        <div class="editable-section">
+            <div class="editable-field">
+                <label for="headerMessage">Header Message:</label>
+                <textarea id="headerMessage" rows="2" placeholder="Enter header message...">Welcome to Peter and Alison's wedding contribution fundraiser.</textarea>
+            </div>
+            <div class="editable-field">
+                <label for="purposeSummary">Purpose Summary:</label>
+                <textarea id="purposeSummary" rows="2" placeholder="Enter purpose summary...">We are raising funds to support Peter and Alison as they begin their new life together.</textarea>
+            </div>
+            <div class="editable-field">
+                <label for="footerMessage">Footer Message:</label>
+                <textarea id="footerMessage" rows="2" placeholder="Enter footer message...">Thanks to all who have contributed. If you made a pledge, kindly send it in. Your support is appreciated!</textarea>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="form-section">
+                <h2><span class="emoji">➕</span> Add New Contribution</h2>
+                
+                <div class="form-group">
+                    <label for="contributorName">Name:</label>
+                    <input type="text" id="contributorName" required placeholder="Enter contributor name">
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount (KES):</label>
+                    <input type="number" id="amount" required min="1" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method:</label>
+                    <select id="paymentMethod" required>
+                        <option value="">Select payment method</option>
+                        <option value="M-Pesa">M-Pesa</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank">Bank</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contributionDate">Date:</label>
+                    <input type="date" id="contributionDate" required>
+                </div>
+                
+                <button type="button" id="addBtn" class="btn" onclick="handleAddClick()">Add Contribution</button>
+            </div>
+
+            <div class="summary-section">
+                <div class="total-amount">KES <span id="totalAmount">0</span></div>
+                <div class="total-label">Total Contributions Collected</div>
+            </div>
+
+            <div style="margin-bottom: 20px; text-align: center;">
+                <button id="whatsappBtn" class="btn btn-whatsapp" onclick="shareOnWhatsApp()">📱 Share on WhatsApp</button>
+                <button id="downloadBtn" class="btn btn-download" onclick="downloadReport()">📥 Download Report</button>
+            </div>
+
+            <div class="table-container">
+                <table class="contributions-table">
+                    <thead>
+                        <tr>
+                            <th>Serial #</th>
+                            <th>Name</th>
+                            <th>Amount (KES)</th>
+                            <th>Method</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contributionsTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <span class="emoji">📝</span>
+                <h3>No contributions yet</h3>
+                <p>Add your first contribution using the form above!</p>
+            </div>
+        </div>
+
+        <div class="footer-section">
+            <p>Mchango Tracker - Built with ❤️ for community fundraising</p>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage
+        let contributions = [
+            {
+                id: 1,
+                name: "John Kamau",
+                amount: 5000,
+                method: "M-Pesa",
+                date: "2025-08-01"
+            },
+            {
+                id: 2,
+                name: "Mary Wanjiku",
+                amount: 7500,
+                method: "Bank",
+                date: "2025-08-02"
+            },
+            {
+                id: 3,
+                name: "David Ochieng",
+                amount: 3000,
+                method: "Cash",
+                date: "2025-08-03"
+            },
+            {
+                id: 4,
+                name: "Grace Muthoni",
+                amount: 10000,
+                method: "M-Pesa",
+                date: "2025-08-04"
+            },
+            {
+                id: 5,
+                name: "Peter Kiprotich",
+                amount: 4500,
+                method: "Bank",
+                date: "2025-08-04"
+            }
+        ];
+
+        // Handle add contribution button click
+        function handleAddClick() {
+            addContribution();
+        }
+
+        // Set current date on page load
+        function setCurrentDate() {
+            const dateEl = document.getElementById('contributionDate');
+            if (dateEl) {
+                const today = new Date().toISOString().split('T')[0];
+                dateEl.value = today;
+            }
+        }
+
+        // Get settings from form
+        function getSettings() {
+            return {
+                headerMessage: document.getElementById('headerMessage').value,
+                purposeSummary: document.getElementById('purposeSummary').value,
+                footerMessage: document.getElementById('footerMessage').value
+            };
+        }
+
+        // Add new contribution
+        function addContribution() {
+            // Get form values
+            const nameEl = document.getElementById('contributorName');
+            const amountEl = document.getElementById('amount');
+            const methodEl = document.getElementById('paymentMethod');
+            const dateEl = document.getElementById('contributionDate');
+
+            if (!nameEl || !amountEl || !methodEl || !dateEl) {
+                alert('Form elements not found');
+                return;
+            }
+
+            const name = nameEl.value.trim();
+            const amount = parseFloat(amountEl.value);
+            const method = methodEl.value;
+            const date = dateEl.value;
+
+            // Validation
+            if (!name) {
+                alert('Please enter a contributor name');
+                nameEl.focus();
+                return;
+            }
+
+            if (!amount || amount <= 0 || isNaN(amount)) {
+                alert('Please enter a valid amount');
+                amountEl.focus();
+                return;
+            }
+
+            if (!method) {
+                alert('Please select a payment method');
+                methodEl.focus();
+                return;
+            }
+
+            if (!date) {
+                alert('Please select a date');
+                dateEl.focus();
+                return;
+            }
+
+            // Create new contribution
+            const newContribution = {
+                id: Date.now(),
+                name: name,
+                amount: amount,
+                method: method,
+                date: date
+            };
+
+            // Add to array
+            contributions.push(newContribution);
+
+            // Update display
+            renderTable();
+            updateTotal();
+            resetForm();
+
+            // Success message
+            alert(`Contribution from ${name} (KES ${amount.toLocaleString()}) added successfully!`);
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('contributorName').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('paymentMethod').value = '';
+            setCurrentDate();
+            document.getElementById('contributorName').focus();
+        }
+
+        // Render contributions table
+        function renderTable() {
+            const tbody = document.getElementById('contributionsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const tableContainer = document.querySelector('.table-container');
+
+            if (contributions.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                tableContainer.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tableContainer.style.display = 'block';
+
+            tbody.innerHTML = contributions.map((contribution, index) => {
+                const methodClass = `method-${contribution.method.toLowerCase().replace('-', '')}`;
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${contribution.name}</td>
+                        <td>KES ${contribution.amount.toLocaleString()}</td>
+                        <td><span class="method-badge ${methodClass}">${contribution.method}</span></td>
+                        <td>${new Date(contribution.date).toLocaleDateString()}</td>
+                        <td class="actions-column">
+                            <button class="btn btn-small" onclick="editContribution(${contribution.id})" title="Edit">✏️</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteContribution(${contribution.id})" title="Delete">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update total amount
+        function updateTotal() {
+            const total = contributions.reduce((sum, c) => sum + c.amount, 0);
+            document.getElementById('totalAmount').textContent = total.toLocaleString();
+        }
+
+        // Delete contribution
+        function deleteContribution(id) {
+            if (confirm('Are you sure you want to delete this contribution?')) {
+                contributions = contributions.filter(c => c.id !== id);
+                renderTable();
+                updateTotal();
+                alert('Contribution deleted successfully!');
+            }
+        }
+
+        // Edit contribution
+        function editContribution(id) {
+            const contribution = contributions.find(c => c.id === id);
+            if (contribution) {
+                document.getElementById('contributorName').value = contribution.name;
+                document.getElementById('amount').value = contribution.amount;
+                document.getElementById('paymentMethod').value = contribution.method;
+                document.getElementById('contributionDate').value = contribution.date;
+                
+                // Remove from array so user can re-add
+                contributions = contributions.filter(c => c.id !== id);
+                renderTable();
+                updateTotal();
+                
+                document.getElementById('contributorName').focus();
+            }
+        }
+
+        // Share on WhatsApp
+        function shareOnWhatsApp() {
+            if (contributions.length === 0) {
+                alert('Add at least one contribution before sharing!');
+                return;
+            }
+
+            const settings = getSettings();
+            const latestContribution = contributions[contributions.length - 1];
+            const total = contributions.reduce((sum, c) => sum + c.amount, 0);
+            const currentDate = new Date().toLocaleDateString();
+
+            const message = `${settings.headerMessage}
+
+📢 *MCHANGO UPDATE - ${currentDate}*
+🎯 *Purpose:* ${settings.purposeSummary}
+🧍🏽‍♂️ *Latest Contributor:* ${latestContribution.name}
+💰 *Amount:* KES ${latestContribution.amount.toLocaleString()} via ${latestContribution.method}
+📊 *Total Collected:* KES ${total.toLocaleString()}
+👥 *Total Contributors:* ${contributions.length}
+
+${settings.footerMessage}`;
+
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Download CSV report
+        function downloadReport() {
+            const settings = getSettings();
+            const currentDate = new Date().toISOString().split('T')[0];
+            const filename = `mchango-report-${currentDate}.csv`;
+
+            let csvContent = `"Mchango Report - ${currentDate}"\n\n`;
+            csvContent += `"Header Message","${settings.headerMessage}"\n`;
+            csvContent += `"Purpose Summary","${settings.purposeSummary}"\n\n`;
+            csvContent += '"Serial #","Name","Amount (KES)","Method","Date"\n';
+
+            contributions.forEach((contribution, index) => {
+                csvContent += `"${index + 1}","${contribution.name}","${contribution.amount}","${contribution.method}","${contribution.date}"\n`;
+            });
+
+            const total = contributions.reduce((sum, c) => sum + c.amount, 0);
+            csvContent += `\n"Total Collected","KES ${total.toLocaleString()}"\n`;
+            csvContent += `"Total Contributors","${contributions.length}"\n\n`;
+            csvContent += `"Footer Message","${settings.footerMessage}"\n`;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Make functions globally available
+        window.addContribution = addContribution;
+        window.handleAddClick = handleAddClick;
+        window.deleteContribution = deleteContribution;
+        window.editContribution = editContribution;
+        window.shareOnWhatsApp = shareOnWhatsApp;
+        window.downloadReport = downloadReport;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setCurrentDate();
+            renderTable();
+            updateTotal();
+        });
+
+        // Also initialize immediately in case DOM is already ready
+        if (document.readyState !== 'loading') {
+            setCurrentDate();
+            renderTable();
+            updateTotal();
+        }
+    </script>
+</body>
+</html>

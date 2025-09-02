@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Pedometer App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Real Pedometer App</title>
     <style>
         * {
             margin: 0;
@@ -72,11 +72,6 @@
             font-weight: bold;
             color: #4A90E2;
             margin-bottom: 5px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .step-count:hover {
-            transform: scale(1.05);
         }
         .goal-text {
             font-size: 16px;
@@ -130,18 +125,70 @@
             font-size: 14px;
             color: #666;
         }
+        .control-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .control-button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .start-button {
+            background: #4CAF50;
+            color: white;
+        }
+        .start-button:hover {
+            background: #3D8B40;
+        }
+        .stop-button {
+            background: #F44336;
+            color: white;
+        }
+        .stop-button:hover {
+            background: #D32F2F;
+        }
+        .reset-button {
+            background: #FFC107;
+            color: #333;
+        }
+        .reset-button:hover {
+            background: #FFA000;
+        }
         .status-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
             margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .status-active {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+        .status-inactive {
+            background: #FFEBEE;
+            color: #C62828;
         }
         .status-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: #FFC107;
             margin-right: 8px;
+        }
+        .dot-active {
+            background: #4CAF50;
+        }
+        .dot-inactive {
+            background: #F44336;
         }
         /* History Screen Styles */
         .chart-container {
@@ -309,14 +356,28 @@
         .tab-label {
             font-size: 12px;
         }
-        /* Demo notification */
-        .demo-notice {
-            background: #FFF3CD;
-            color: #856404;
-            padding: 10px;
+        /* Permission Notice */
+        .permission-notice {
+            background: #E3F2FD;
+            color: #1565C0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             text-align: center;
             font-size: 14px;
-            border-bottom: 1px solid #FFEAA7;
+        }
+        .permission-button {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .permission-button:hover {
+            background: #3A80D2;
         }
     </style>
 </head>
@@ -324,13 +385,9 @@
     <div class="phone-container">
         <!-- Status Bar -->
         <div class="status-bar">
-            <span>9:41</span>
-            <span>Simple Pedometer</span>
-            <span>100%</span>
-        </div>
-        <!-- Demo Notice -->
-        <div class="demo-notice">
-            📱 Web Demo - Click step counter to simulate walking!
+            <span id="currentTime">9:41</span>
+            <span>Real Pedometer</span>
+            <span id="batteryLevel">100%</span>
         </div>
         <!-- App Content -->
         <div class="app-content">
@@ -338,7 +395,7 @@
             <div id="home" class="screen active">
                 <div class="step-counter">
                     <div class="step-count-label">Steps Today</div>
-                    <div class="step-count" id="stepCount" onclick="addSteps()">0</div>
+                    <div class="step-count" id="stepCount">0</div>
                     <div class="goal-text">Goal: <span id="goalText">10,000</span></div>
                 </div>
                 <div class="progress-container">
@@ -357,9 +414,18 @@
                         <div class="stat-label">calories burned</div>
                     </div>
                 </div>
-                <div class="status-indicator">
-                    <div class="status-dot"></div>
-                    <span>Demo mode - Click counter to add steps</span>
+                <div class="control-container">
+                    <button class="control-button start-button" id="startButton" onclick="startPedometer()">Start</button>
+                    <button class="control-button stop-button" id="stopButton" onclick="stopPedometer()" style="display: none;">Stop</button>
+                    <button class="control-button reset-button" onclick="resetSteps()">Reset</button>
+                </div>
+                <div class="status-indicator status-inactive" id="statusIndicator">
+                    <div class="status-dot dot-inactive" id="statusDot"></div>
+                    <span id="statusText">Pedometer is inactive</span>
+                </div>
+                <div class="permission-notice" id="permissionNotice" style="display: none;">
+                    <p>This app needs permission to access your device's motion sensors to count steps.</p>
+                    <button class="permission-button" onclick="requestPermission()">Grant Permission</button>
                 </div>
             </div>
             <!-- History Screen -->
@@ -391,13 +457,19 @@
                     <button class="save-button" onclick="saveWeight()">Save Weight</button>
                 </div>
                 <div class="setting-card">
+                    <div class="setting-title">Step Sensitivity</div>
+                    <div class="setting-description">Adjust based on your walking style</div>
+                    <input type="range" class="input" id="sensitivityInput" min="1" max="10" value="5">
+                    <button class="save-button" onclick="saveSensitivity()">Save Sensitivity</button>
+                </div>
+                <div class="setting-card">
                     <div class="setting-title">About Step Counting</div>
                     <div class="info-text">
                         • Average step length: 0.75 meters<br>
-                        • Calorie calculation: steps × 0.04<br>
+                        • Calorie calculation: steps × 0.04 × weight factor<br>
                         • Data resets daily at midnight<br>
                         • History shows last 7 days<br><br>
-                        <strong>Note:</strong> This is a web demo. The actual mobile app uses device motion sensors for real step counting.
+                        <strong>Note:</strong> This app uses your device's motion sensors to detect steps. For best results, keep your phone in your pocket while walking.
                     </div>
                 </div>
             </div>
@@ -430,7 +502,11 @@
         let stepCount = parseInt(localStorage.getItem('stepCount')) || 0;
         let dailyGoal = parseInt(localStorage.getItem('dailyGoal')) || 10000;
         let userWeight = parseInt(localStorage.getItem('userWeight')) || 70;
+        let sensitivity = parseInt(localStorage.getItem('sensitivity')) || 5;
         let history = JSON.parse(localStorage.getItem('history')) || [];
+        let isActive = false;
+        let lastStepTime = 0;
+        let stepThreshold = 11 - sensitivity; // Higher sensitivity = lower threshold
         
         // Initialize the app
         function initApp() {
@@ -438,37 +514,132 @@
                 updateDisplay();
                 generateHistory();
                 updateHistoryDisplay();
+                updateTime();
+                setInterval(updateTime, 1000);
                 
                 // Load settings with error checking
                 const goalInput = document.getElementById('goalInput');
                 const weightInput = document.getElementById('weightInput');
+                const sensitivityInput = document.getElementById('sensitivityInput');
                 
                 if (goalInput) goalInput.value = dailyGoal;
                 if (weightInput) weightInput.value = userWeight;
+                if (sensitivityInput) sensitivityInput.value = sensitivity;
+                
+                // Check for motion sensor support
+                if (!window.DeviceMotionEvent) {
+                    document.getElementById('permissionNotice').style.display = 'block';
+                    document.getElementById('permissionNotice').innerHTML = 
+                        '<p>Your device does not support motion sensors. This app requires a device with an accelerometer.</p>';
+                }
             } catch (error) {
                 console.error('Error initializing app:', error);
             }
         }
         
-        // Add steps (demo functionality)
-        function addSteps() {
-            const increment = Math.floor(Math.random() * 50) + 20; // 20-70 steps
-            stepCount += increment;
-            localStorage.setItem('stepCount', stepCount);
-            updateDisplay();
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            document.getElementById('currentTime').textContent = `${displayHours}:${minutes} ${ampm}`;
+        }
+        
+        // Start pedometer
+        function startPedometer() {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS 13+ requires permission request
+                DeviceMotionEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            initMotionSensors();
+                        } else {
+                            alert('Permission denied. Cannot count steps without motion sensor access.');
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Non-iOS devices
+                initMotionSensors();
+            }
+        }
+        
+        // Initialize motion sensors
+        function initMotionSensors() {
+            isActive = true;
+            document.getElementById('startButton').style.display = 'none';
+            document.getElementById('stopButton').style.display = 'block';
+            document.getElementById('statusIndicator').className = 'status-indicator status-active';
+            document.getElementById('statusDot').className = 'status-dot dot-active';
+            document.getElementById('statusText').textContent = 'Pedometer is active - Start walking!';
             
-            // Add some visual feedback
-            const counter = document.getElementById('stepCount');
-            counter.style.transform = 'scale(1.1)';
-            setTimeout(() => {
-                counter.style.transform = 'scale(1)';
-            }, 200);
+            window.addEventListener('devicemotion', handleMotion);
+        }
+        
+        // Stop pedometer
+        function stopPedometer() {
+            isActive = false;
+            document.getElementById('startButton').style.display = 'block';
+            document.getElementById('stopButton').style.display = 'none';
+            document.getElementById('statusIndicator').className = 'status-indicator status-inactive';
+            document.getElementById('statusDot').className = 'status-dot dot-inactive';
+            document.getElementById('statusText').textContent = 'Pedometer is inactive';
+            
+            window.removeEventListener('devicemotion', handleMotion);
+        }
+        
+        // Handle motion events
+        function handleMotion(event) {
+            if (!isActive) return;
+            
+            const acceleration = event.accelerationIncludingGravity;
+            if (!acceleration) return;
+            
+            // Calculate magnitude of acceleration
+            const magnitude = Math.sqrt(
+                acceleration.x * acceleration.x + 
+                acceleration.y * acceleration.y + 
+                acceleration.z * acceleration.z
+            );
+            
+            // Detect step pattern
+            const now = Date.now();
+            if (magnitude > stepThreshold && (now - lastStepTime) > 300) {
+                stepCount++;
+                lastStepTime = now;
+                localStorage.setItem('stepCount', stepCount);
+                updateDisplay();
+                
+                // Visual feedback
+                const counter = document.getElementById('stepCount');
+                counter.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    counter.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+        
+        // Reset steps
+        function resetSteps() {
+            if (confirm('Reset today\'s step count?')) {
+                stepCount = 0;
+                localStorage.setItem('stepCount', stepCount);
+                updateDisplay();
+                updateHistoryDisplay();
+            }
+        }
+        
+        // Request permission (for iOS)
+        function requestPermission() {
+            startPedometer();
         }
         
         // Update display values
         function updateDisplay() {
             const distance = (stepCount * 0.75 / 1000).toFixed(2);
-            const calories = Math.round(stepCount * 0.04);
+            const calories = Math.round(stepCount * 0.04 * (userWeight / 70));
             const progress = Math.min((stepCount / dailyGoal) * 100, 100);
             
             document.getElementById('stepCount').textContent = stepCount.toLocaleString();
@@ -582,6 +753,17 @@
             }
         }
         
+        // Save sensitivity setting
+        function saveSensitivity() {
+            const sensitivityInput = document.getElementById('sensitivityInput');
+            if (!sensitivityInput) return;
+            
+            sensitivity = parseInt(sensitivityInput.value);
+            stepThreshold = 11 - sensitivity; // Higher sensitivity = lower threshold
+            localStorage.setItem('sensitivity', sensitivity);
+            alert('Sensitivity updated!');
+        }
+        
         // Show screen
         function showScreen(screenName, element) {
             // Hide all screens
@@ -606,38 +788,51 @@
             }
         }
         
-        // Simulate daily reset (for demo)
-        function resetDaily() {
-            if (confirm('Reset daily step count? (This simulates the midnight reset)')) {
+        // Check for daily reset at midnight
+        function checkDailyReset() {
+            const lastReset = localStorage.getItem('lastReset');
+            const today = new Date().toDateString();
+            
+            if (lastReset !== today) {
+                // Save today's steps to history
+                if (history.length > 0) {
+                    history[history.length - 1].steps = stepCount;
+                    history[history.length - 1].distance = (stepCount * 0.75 / 1000).toFixed(2);
+                }
+                
+                // Reset steps
                 stepCount = 0;
                 localStorage.setItem('stepCount', stepCount);
+                localStorage.setItem('lastReset', today);
+                
+                // Add new day to history
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                history.push({
+                    date: tomorrow.toDateString(),
+                    dayName: tomorrow.toLocaleDateString('en', { weekday: 'short' }),
+                    dayNumber: tomorrow.getDate(),
+                    steps: 0,
+                    distance: '0.00'
+                });
+                
+                // Keep only last 7 days
+                if (history.length > 7) {
+                    history.shift();
+                }
+                
+                localStorage.setItem('history', JSON.stringify(history));
                 updateDisplay();
-                updateHistoryDisplay();
             }
         }
         
-        // Auto-increment steps occasionally (demo feature)
-        setInterval(() => {
-            if (Math.random() < 0.3) { // 30% chance every 5 seconds
-                stepCount += Math.floor(Math.random() * 5) + 1;
-                localStorage.setItem('stepCount', stepCount);
-                updateDisplay();
-            }
-        }, 5000);
-        
         // Initialize app when page loads
-        window.addEventListener('load', initApp);
-        
-        // Add keyboard shortcut for demo
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                addSteps();
-            }
-            if (e.code === 'KeyR' && e.ctrlKey) {
-                e.preventDefault();
-                resetDaily();
-            }
+        window.addEventListener('load', () => {
+            initApp();
+            checkDailyReset();
+            // Check for reset every minute
+            setInterval(checkDailyReset, 60000);
         });
     </script>
 </body>
